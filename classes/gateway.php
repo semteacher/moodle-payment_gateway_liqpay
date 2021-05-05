@@ -50,10 +50,6 @@ class gateway extends \core_payment\gateway {
     public static function add_configuration_to_gateway_form(\core_payment\form\account_gateway $form): void {
         $mform = $form->get_mform();
 
-        $mform->addElement('text', 'brandname', get_string('brandname', 'paygw_liqpay'));
-        $mform->setType('brandname', PARAM_TEXT);
-        $mform->addHelpButton('brandname', 'brandname', 'paygw_liqpay');
-
         $mform->addElement('text', 'publickey', get_string('publickey', 'paygw_liqpay'));
         $mform->setType('publickey', PARAM_TEXT);
         $mform->addHelpButton('publickey', 'publickey', 'paygw_liqpay');
@@ -82,7 +78,7 @@ class gateway extends \core_payment\gateway {
     public static function validate_gateway_form(\core_payment\form\account_gateway $form,
                                                  \stdClass $data, array $files, array &$errors): void {
         if ($data->enabled &&
-                (empty($data->brandname) || empty($data->publickey) || empty($data->privatekey))) {
+                (empty($data->publickey) || empty($data->privatekey))) {
             $errors['enabled'] = get_string('gatewaycannotbeenabled', 'payment');
         }
     }

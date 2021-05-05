@@ -9,7 +9,6 @@
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="paymentid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="lp_orderid" TYPE="char" LENGTH="255" NOTNULL="true" DEFAULT="The ID of the order in LiqPal" SEQUENCE="false"/>
-        <FIELD NAME="publickey" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="amount" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="currency" TYPE="char" LENGTH="30" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="amount_credit" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false"/>

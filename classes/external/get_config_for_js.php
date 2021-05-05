@@ -72,7 +72,6 @@ class get_config_for_js extends external_api {
         $surcharge = helper::get_gateway_surcharge('liqpay');
 
         return [
-            'brandname' => $config['brandname'],
             'publickey' => $config['publickey'],
             'privatekey' => $config['privatekey'],
             'cost' => helper::get_rounded_cost($payable->get_amount(), $payable->get_currency(), $surcharge),
@@ -87,7 +86,6 @@ class get_config_for_js extends external_api {
      */
     public static function execute_returns(): external_single_structure {
         return new external_single_structure([
-            'brandname' => new external_value(PARAM_TEXT, 'LiqPay BrandName'),
             'publickey' => new external_value(PARAM_TEXT, 'LiqPay PublicKey'),
             'privatekey' => new external_value(PARAM_TEXT, 'LiqPay PrivateKey'),
             'cost' => new external_value(PARAM_FLOAT, 'Cost with gateway surcharge'),

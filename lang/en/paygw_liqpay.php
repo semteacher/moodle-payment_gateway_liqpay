@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Strings for component 'paygw_paypal', language 'en'
+ * Strings for component 'paygw_liqpay', language 'en'
  *
  * @package    paygw_liqpay
  * @copyright  2019 Shamim Rezaie (PayPal) <shamim@moodle.com>
@@ -25,8 +25,6 @@
 
 $string['amountmismatch'] = 'The amount you attempted to pay does not match the required fee. Your account has not been debited.';
 $string['authorising'] = 'Authorising the payment. Please wait...';
-$string['brandname'] = 'Brand name';
-$string['brandname_help'] = 'An optional label that overrides the business name for the LiqPay account on the LiqPay site.';
 $string['cannotfetchorderdatails'] = 'Could not fetch payment details from LiqPay. Your account has not been debited.';
 $string['publickey'] = 'LiqPay PublicKey ';
 $string['publickey_help'] = 'The PublicKey that LiqPay generated for your application.';
