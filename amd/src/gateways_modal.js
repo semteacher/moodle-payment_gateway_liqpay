@@ -53,6 +53,10 @@ const showModalWithPlaceholder = async() => {
  * @returns {Promise<string>}
  */
 export const process = (component, paymentArea, itemId, description) => {
+console.log(component);
+console.log(paymentArea);
+console.log(itemId);
+console.log(description);
     return Promise.all([
         showModalWithPlaceholder(),
         Repository.getConfigForJs(component, paymentArea, itemId),
@@ -75,19 +79,18 @@ export const process = (component, paymentArea, itemId, description) => {
 
         return new Promise(resolve => {
 console.log(liqpayConfig);
-            window.LiqPayCheckoutCallback = function() {
+            //window.LiqPayCheckoutCallback = function() {
             LiqPayCheckout.init({
                 data: "eyAidmVyc2lvbiIgOiAzLCAicHVibGljX2tleSIgOiAieW91cl9wdWJsaWNfa2V5IiwgImFjdGlv" +
                 "biIgOiAicGF5IiwgImFtb3VudCIgOiAxLCAiY3VycmVuY3kiIDogIlVTRCIsICJkZXNjcmlwdGlv" +
                 "biIgOiAiZGVzY3JpcHRpb24gdGV4dCIsICJvcmRlcl9pZCIgOiAib3JkZXJfaWRfMSIgfQ==",
                 signature: "QvJD5u9Fg55PCx/Hdz6lzWtYwcI=",
                 embedTo: "#liqpay_checkout",
-                language: "ua",
+                language: "uk",
                 mode: "embed" // embed || popup
             }).on("liqpay.callback", function(data){
                 console.log(data.status);
                 console.log(data);
-                
                             modal.getRoot().on(ModalEvents.outsideClick, (e) => {
                                 // Prevent closing the modal when clicking outside of it.
                                 e.preventDefault();
@@ -100,13 +103,13 @@ console.log(liqpayConfig);
                                 modal.hide();
                                 return res;
                             })
-                            .then(resolve);        
+                            .then(resolve);
             }).on("liqpay.ready", function(data){
                 // ready
             }).on("liqpay.close", function(data){
                 // close
             });
-
+            //};
         });
     })
     .then(res => {
