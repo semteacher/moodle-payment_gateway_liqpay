@@ -59,9 +59,10 @@ console.log(itemId);
 console.log(description);
     return Promise.all([
         showModalWithPlaceholder(),
-        Repository.getConfigForJs(component, paymentArea, itemId),
+        Repository.getConfigForJs(component, paymentArea, itemId, description),
     ])
     .then(([modal, liqpayConfig]) => {
+        console.log(liqpayConfig);
         modal.getRoot().on(ModalEvents.hidden, () => {
             // Destroy when hidden.
             modal.destroy();
@@ -78,13 +79,11 @@ console.log(description);
         //modal.setBody('');
 
         return new Promise(resolve => {
-console.log(liqpayConfig);
+//console.log(liqpayConfig);
             //window.LiqPayCheckoutCallback = function() {
             LiqPayCheckout.init({
-                data: "eyAidmVyc2lvbiIgOiAzLCAicHVibGljX2tleSIgOiAieW91cl9wdWJsaWNfa2V5IiwgImFjdGlv" +
-                "biIgOiAicGF5IiwgImFtb3VudCIgOiAxLCAiY3VycmVuY3kiIDogIlVTRCIsICJkZXNjcmlwdGlv" +
-                "biIgOiAiZGVzY3JpcHRpb24gdGV4dCIsICJvcmRlcl9pZCIgOiAib3JkZXJfaWRfMSIgfQ==",
-                signature: "QvJD5u9Fg55PCx/Hdz6lzWtYwcI=",
+                data: liqpayConfig.lpencdata,
+                signature: liqpayConfig.lpsignature,
                 embedTo: "#liqpay_checkout",
                 language: "uk",
                 mode: "embed" // embed || popup

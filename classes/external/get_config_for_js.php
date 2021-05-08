@@ -49,6 +49,7 @@ class get_config_for_js extends external_api {
             'component' => new external_value(PARAM_COMPONENT, 'Component'),
             'paymentarea' => new external_value(PARAM_AREA, 'Payment area in the component'),
             'itemid' => new external_value(PARAM_INT, 'An identifier for payment area in the component'),
+            'description' => new external_value(PARAM_TEXT, 'DEscroption of payment'),
         ]);
     }
 
@@ -60,22 +61,39 @@ class get_config_for_js extends external_api {
      * @param int $itemid
      * @return string[]
      */
-    public static function execute(string $component, string $paymentarea, int $itemid): array {
+    public static function execute(string $component, string $paymentarea, int $itemid, string $description): array {
+        global $USER;
         self::validate_parameters(self::execute_parameters(), [
             'component' => $component,
             'paymentarea' => $paymentarea,
             'itemid' => $itemid,
+            'description' => description,
         ]);
 
         $config = helper::get_gateway_configuration($component, $paymentarea, $itemid, 'liqpay');
         $payable = helper::get_payable($component, $paymentarea, $itemid);
         $surcharge = helper::get_gateway_surcharge('liqpay');
 
+        $lpencdata = base64_encode(json_encode([
+                                    'version'        => '3',
+                                    'public_key'      => $config['publickey'],
+                                    'private_key'     => $config['privatekey'],
+                                    'action'         => 'pay',
+                                    'amount'         => helper::get_rounded_cost($payable->get_amount(), $payable->get_currency(), $surcharge),
+                                    'currency'       => $payable->get_currency(),
+                                    'description'    => $description,
+                                    'order_id'       => "{$USER->id}-{$component}-{$itemid}-".time(),
+                                    'language'       => current_language(),        
+        ]));
+        $lpsignature = base64_encode( sha1( $config['privatekey'] . $lpencdata . $config['privatekey'], true ));
+
         return [
             'publickey' => $config['publickey'],
             'privatekey' => $config['privatekey'],
             'cost' => helper::get_rounded_cost($payable->get_amount(), $payable->get_currency(), $surcharge),
             'currency' => $payable->get_currency(),
+            'lpencdata' => $lpencdata,
+            'lpsignature'=> $lpsignature,
         ];
     }
 
@@ -90,6 +108,8 @@ class get_config_for_js extends external_api {
             'privatekey' => new external_value(PARAM_TEXT, 'LiqPay PrivateKey'),
             'cost' => new external_value(PARAM_FLOAT, 'Cost with gateway surcharge'),
             'currency' => new external_value(PARAM_TEXT, 'Currency'),
+            'lpencdata' => new external_value(PARAM_TEXT, 'Encoded LiqPay data'),
+            'lpsignature' => new external_value(PARAM_TEXT, 'LiqPay signature'),
         ]);
     }
 }

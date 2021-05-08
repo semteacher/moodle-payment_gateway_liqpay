@@ -33,13 +33,14 @@ import Ajax from 'core/ajax';
  * @param {number} itemId An internal identifier that is used by the component
  * @returns {Promise<{publickey: string, privatekey: string, cost: number, currency: string}>}
  */
-export const getConfigForJs = (component, paymentArea, itemId) => {
+export const getConfigForJs = (component, paymentArea, itemId, description) => {
     const request = {
         methodname: 'paygw_liqpay_get_config_for_js',
         args: {
             component,
             paymentarea: paymentArea,
             itemid: itemId,
+            description,
         },
     };
 
