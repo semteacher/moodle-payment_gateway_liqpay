@@ -24,7 +24,6 @@
 
 import * as Repository from './repository';
 import Templates from 'core/templates';
-import Truncate from 'core/truncate';
 import ModalFactory from 'core/modal_factory';
 import ModalEvents from 'core/modal_events';
 import {get_string as getString} from 'core/str';
@@ -35,7 +34,6 @@ import {get_string as getString} from 'core/str';
  * @returns {Promise<Modal>}
  */
 const showModalWithPlaceholder = async() => {
-    //switchSdk();
     const modal = await ModalFactory.create({
         body: await Templates.render('paygw_liqpay/liqpay_widget_placeholder', {})
     });
@@ -71,7 +69,6 @@ export const process = (component, paymentArea, itemId, description) => {
     })
     .then(([modal, liqpayConfig]) => {
         return new Promise(resolve => {
-            //window.LiqPayCheckoutCallback = function() {
             LiqPayCheckout.init({
                 data: liqpayConfig.lpencdata,
                 signature: liqpayConfig.lpsignature,
@@ -79,27 +76,19 @@ export const process = (component, paymentArea, itemId, description) => {
                 language: liqpayConfig.language,
                 mode: "embed" // embed || popup
             }).on("liqpay.callback", function(data){
-                console.log(data.status);
-                console.log(data);
-                console.log(JSON.stringify(data));
-                console.log(typeof JSON.stringify(data));
-                            modal.getRoot().on(ModalEvents.outsideClick, (e) => {
-                                // Prevent closing the modal when clicking outside of it.
-                                e.preventDefault();
-                            });
-                            modal.setBody(getString('authorising', 'paygw_liqpay'));
-                            Repository.markTransactionComplete(component, paymentArea, itemId, JSON.stringify(data))
-                            .then(res => {
-                                modal.hide();
-                                return res;
-                            })
-                            .then(resolve);
-            }).on("liqpay.ready", function(data){
-                // ready
-            }).on("liqpay.close", function(data){
-                // close
+                //console.log(JSON.stringify(data));
+                modal.getRoot().on(ModalEvents.outsideClick, (e) => {
+                    // Prevent closing the modal when clicking outside of it.
+                    e.preventDefault();
+                });
+                modal.setBody(getString('authorising', 'paygw_liqpay'));
+                Repository.markTransactionComplete(component, paymentArea, itemId, JSON.stringify(data))
+                .then(res => {
+                    modal.hide();
+                    return res;
+                })
+                .then(resolve);
             });
-            //};
         });
     })
     .then(res => {

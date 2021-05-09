@@ -32,7 +32,7 @@ use external_api;
 use external_function_parameters;
 use external_value;
 use core_payment\helper as payment_helper;
-use paygw_liqpay\liqpay_helper;
+//use paygw_liqpay\liqpay_helper;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -73,8 +73,7 @@ class transaction_complete extends external_api {
             'itemid' => $itemid,
             'orderdata' => $orderdata,
         ]);
-error_log(print_r($orderdata, true));
-file_put_contents ('liqpayresponce.log',print_r($orderdata, true),FILE_APPEND);
+
         $config = (object)helper::get_gateway_configuration($component, $paymentarea, $itemid, 'liqpay');
         $sandbox = $config->environment == 'sandbox';
 
@@ -85,52 +84,83 @@ file_put_contents ('liqpayresponce.log',print_r($orderdata, true),FILE_APPEND);
         $surcharge = helper::get_gateway_surcharge('liqpay');
         $amount = helper::get_rounded_cost($payable->get_amount(), $currency, $surcharge);
 
-        $paypalhelper = new paypal_helper($config->publickey, $config->privatekey, $sandbox);
-        $orderdetails = $paypalhelper->get_order_details($orderdata);
-
+        $orderdetails = json_decode($orderdata, true);
+        $localsign = base64_encode( sha1( $config->privatekey . $orderdetails['data'] . $config->privatekey, true ));
         $success = false;
         $message = '';
 
         if ($orderdetails) {
-            if ($orderdetails['status'] == paypal_helper::ORDER_STATUS_APPROVED &&
-                    $orderdetails['intent'] == paypal_helper::ORDER_INTENT_CAPTURE) {
-                $item = $orderdetails['purchase_units'][0];
-                if ($item['amount']['value'] == $amount && $item['amount']['currency_code'] == $currency) {
-                    $capture = $paypalhelper->capture_order($orderdata);
-                    if ($capture && $capture['status'] == paypal_helper::CAPTURE_STATUS_COMPLETED) {
-                        $success = true;
-                        // Everything is correct. Let's give them what they paid for.
-                        try {
-                            $paymentid = payment_helper::save_payment($payable->get_account_id(), $component, $paymentarea,
-                                $itemid, (int) $USER->id, $amount, $currency, 'liqpay');
+            // verification if signature does passed or not
+            if (strcmp($orderdetails['signature'], $localsign) == 0) {
+                if ((strlen($orderdetails['action']) > 0) && (strlen($orderdetails['status']) > 0)) {
+                    if ((strcmp($orderdetails['action'], 'pay') == 0) && (strcmp($orderdetails['status'], 'success') == 0)) {
+                        if ($orderdetails['amount'] == $amount && $orderdetails["currency"] == $currency) {
+                            $success = true;
+                            // Everything is correct. Let's give them what they paid for.
+                            try {
+                                $paymentid = payment_helper::save_payment($payable->get_account_id(), $component, $paymentarea,
+                                    $itemid, (int) $USER->id, $amount, $currency, 'liqpay');
+                                // date fixing
+                                if (empty($orderdetails['create_date'])) {$orderdetails['create_date']= time();}
+                                if (empty($orderdetails['end_date'])) {$orderdetails['end_date']= $orderdetails['create_date'];}
+                                // Store LiqPay extra information.
+                                $record = new \stdClass();
+                                $record->paymentid         = $paymentid;                         // Moodle PG payemnt ID
+                                $record->lp_orderid        = $orderdetails['liqpay_order_id'];   // LP order ID
+                                $record->payment_id        = $orderdetails['payment_id'];        // LP transaction_id
+                                $record->amount            = $orderdetails['amount'];            // price amount 
+                                $record->currency          = $orderdetails['currency'];          // currency of price
+                                $record->amount_credit     = $orderdetails['amount_credit'];     // reveived by seller (receiver)
+                                $record->currency_credit   = $orderdetails['currency_credit'];   // currency of receiver's account
+                                $record->commission_credit = $orderdetails['commission_credit']; // commission from receiver
+                                $record->amount_debit      = $orderdetails['amount_debit'];      // payed by customer
+                                $record->currency_debit    = $orderdetails['currency_debit'];    // currency of customer's payment
+                                $record->commission_debit  = $orderdetails['commission_debit'];  // commission from customer
+                                $record->acq_id            = $orderdetails['acq_id'];            // An Equirer ID
+                                $record->end_date          = $orderdetails['end_date'];          // Transaction end date
+                                $record->create_date       = $orderdetails['create_date'];       // Transaction create date
+                                $record->action            = $orderdetails['action'];            // LP action type
+                                $record->payment_status    = $orderdetails['status'];            // "success"
+                                $record->payment_type      = $orderdetails['type'];              // payment type
+                                $record->paytype           = $orderdetails['paytype']; // card - оплата картой, 
+                                                                                    // liqpay - через кабинет liqpay,
+                                                                                    // privat24 - через кабинет приват24, 
+                                                                                    // masterpass - через кабинет masterpass, 
+                                                                                    // moment_part - рассрочка, 
+                                                                                    // cash - наличными, 
+                                                                                    // invoice - счет на e-mail, 
+                                                                                    // qr - сканирование qr-кода
+                                // Transaction error code
+                                $record->err_code          = !empty($orderdetails['err_code'])? $orderdetails['err_code'] : '';
 
-                            // Store LiqPay extra information.
-                            $record = new \stdClass();
-                            $record->paymentid = $paymentid;
-                            $record->pp_orderid = $orderdata;
+                                $DB->insert_record('paygw_liqpay', $record);
 
-                            $DB->insert_record('paygw_liqpay', $record);
-
-                            payment_helper::deliver_order($component, $paymentarea, $itemid, $paymentid, (int) $USER->id);
-                        } catch (\Exception $e) {
-                            debugging('Exception while trying to process payment: ' . $e->getMessage(), DEBUG_DEVELOPER);
+                                payment_helper::deliver_order($component, $paymentarea, $itemid, $paymentid, (int) $USER->id);
+                            } catch (\Exception $e) {
+                                debugging('Exception while trying to process payment: ' . $e->getMessage(), DEBUG_DEVELOPER);
+                                $success = false;
+                                $message = get_string('internalerror', 'paygw_liqpay');
+                            }
+                        } else {
                             $success = false;
-                            $message = get_string('internalerror', 'paygw_liqpay');
+                            $message = get_string('amountmismatch', 'paygw_liqpay');
                         }
                     } else {
                         $success = false;
                         $message = get_string('paymentnotcleared', 'paygw_liqpay');
                     }
                 } else {
+                    // Could not capture authorization!
                     $success = false;
-                    $message = get_string('amountmismatch', 'paygw_liqpay');
+                    $message = get_string('paymentstatusincorrect', 'paygw_liqpay');
                 }
             } else {
+                // Invalid authorization - signature mismatch!
                 $success = false;
-                $message = get_string('paymentnotcleared', 'paygw_liqpay');
+                $message = get_string('signaturemismatch', 'paygw_liqpay');
             }
         } else {
-            // Could not capture authorization!
+            // Could not capture ligpaydata!
             $success = false;
             $message = get_string('cannotfetchorderdatails', 'paygw_liqpay');
         }

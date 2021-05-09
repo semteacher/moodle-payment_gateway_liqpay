@@ -23,9 +23,11 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-$string['amountmismatch'] = 'The amount you attempted to pay does not match the required fee. Your account has not been debited.';
+$string['amountmismatch'] = 'Error! The amount you attempted to pay does not match the required fee. Your account has not been debited.';
 $string['authorising'] = 'Authorising the payment. Please wait...';
-$string['cannotfetchorderdatails'] = 'Could not fetch payment details from LiqPay. Your account has not been debited.';
+$string['cannotfetchorderdatails'] = 'Error! Could not fetch payment details from LiqPay. Your account has not been debited.';
+$string['signaturemismatch'] = 'Error! LiqPay signature mismatch. Check your account for changes!';
+$string['paymentstatusincorrect'] = 'Error! LiqPay payment status incorrect. Check your account for changes!';
 $string['publickey'] = 'LiqPay PublicKey ';
 $string['publickey_help'] = 'The PublicKey that LiqPay generated for your application.';
 $string['environment'] = 'Environment';
