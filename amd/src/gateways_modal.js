@@ -53,16 +53,11 @@ const showModalWithPlaceholder = async() => {
  * @returns {Promise<string>}
  */
 export const process = (component, paymentArea, itemId, description) => {
-console.log(component);
-console.log(paymentArea);
-console.log(itemId);
-console.log(description);
     return Promise.all([
         showModalWithPlaceholder(),
         Repository.getConfigForJs(component, paymentArea, itemId, description),
     ])
     .then(([modal, liqpayConfig]) => {
-        console.log(liqpayConfig);
         modal.getRoot().on(ModalEvents.hidden, () => {
             // Destroy when hidden.
             modal.destroy();
@@ -75,29 +70,25 @@ console.log(description);
         ]);
     })
     .then(([modal, liqpayConfig]) => {
-        // We have to clear the body. The render method in paypal.Buttons will render everything.
-        //modal.setBody('');
-
         return new Promise(resolve => {
-//console.log(liqpayConfig);
             //window.LiqPayCheckoutCallback = function() {
             LiqPayCheckout.init({
                 data: liqpayConfig.lpencdata,
                 signature: liqpayConfig.lpsignature,
                 embedTo: "#liqpay_checkout",
-                language: "uk",
+                language: liqpayConfig.language,
                 mode: "embed" // embed || popup
             }).on("liqpay.callback", function(data){
                 console.log(data.status);
                 console.log(data);
+                console.log(JSON.stringify(data));
+                console.log(typeof JSON.stringify(data));
                             modal.getRoot().on(ModalEvents.outsideClick, (e) => {
                                 // Prevent closing the modal when clicking outside of it.
                                 e.preventDefault();
                             });
-
                             modal.setBody(getString('authorising', 'paygw_liqpay'));
-
-                            Repository.markTransactionComplete(component, paymentArea, itemId, data.orderID)
+                            Repository.markTransactionComplete(component, paymentArea, itemId, JSON.stringify(data))
                             .then(res => {
                                 modal.hide();
                                 return res;

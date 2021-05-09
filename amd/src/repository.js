@@ -53,17 +53,17 @@ export const getConfigForJs = (component, paymentArea, itemId, description) => {
  * @param {string} component Name of the component that the itemId belongs to
  * @param {string} paymentArea The area of the component that the itemId belongs to
  * @param {number} itemId An internal identifier that is used by the component
- * @param {string} orderId The order id coming back from LiqPay
+ * @param {string} orderData The order data coming back from LiqPay
  * @returns {*}
  */
-export const markTransactionComplete = (component, paymentArea, itemId, orderId) => {
+export const markTransactionComplete = (component, paymentArea, itemId, orderData) => {
     const request = {
         methodname: 'paygw_liqpay_create_transaction_complete',
         args: {
             component,
             paymentarea: paymentArea,
             itemid: itemId,
-            orderid: orderId,
+            orderdata: orderData,
         },
     };
 

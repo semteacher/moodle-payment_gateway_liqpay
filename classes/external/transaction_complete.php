@@ -50,7 +50,7 @@ class transaction_complete extends external_api {
             'component' => new external_value(PARAM_COMPONENT, 'The component name'),
             'paymentarea' => new external_value(PARAM_AREA, 'Payment area in the component'),
             'itemid' => new external_value(PARAM_INT, 'The item id in the context of the component area'),
-            'orderid' => new external_value(PARAM_TEXT, 'The order id coming back from LiqPay'),
+            'orderdata' => new external_value(PARAM_RAW, 'The order data coming back from LiqPay'),
         ]);
     }
 
@@ -64,16 +64,17 @@ class transaction_complete extends external_api {
      * @param string $orderid LiqPay order ID
      * @return array
      */
-    public static function execute(string $component, string $paymentarea, int $itemid, string $orderid): array {
+    public static function execute(string $component, string $paymentarea, int $itemid, string $orderdata): array {
         global $USER, $DB;
 
         self::validate_parameters(self::execute_parameters(), [
             'component' => $component,
             'paymentarea' => $paymentarea,
             'itemid' => $itemid,
-            'orderid' => $orderid,
+            'orderdata' => $orderdata,
         ]);
-
+error_log(print_r($orderdata, true));
+file_put_contents ('liqpayresponce.log',print_r($orderdata, true),FILE_APPEND);
         $config = (object)helper::get_gateway_configuration($component, $paymentarea, $itemid, 'liqpay');
         $sandbox = $config->environment == 'sandbox';
 
@@ -85,7 +86,7 @@ class transaction_complete extends external_api {
         $amount = helper::get_rounded_cost($payable->get_amount(), $currency, $surcharge);
 
         $paypalhelper = new paypal_helper($config->publickey, $config->privatekey, $sandbox);
-        $orderdetails = $paypalhelper->get_order_details($orderid);
+        $orderdetails = $paypalhelper->get_order_details($orderdata);
 
         $success = false;
         $message = '';
@@ -95,7 +96,7 @@ class transaction_complete extends external_api {
                     $orderdetails['intent'] == paypal_helper::ORDER_INTENT_CAPTURE) {
                 $item = $orderdetails['purchase_units'][0];
                 if ($item['amount']['value'] == $amount && $item['amount']['currency_code'] == $currency) {
-                    $capture = $paypalhelper->capture_order($orderid);
+                    $capture = $paypalhelper->capture_order($orderdata);
                     if ($capture && $capture['status'] == paypal_helper::CAPTURE_STATUS_COMPLETED) {
                         $success = true;
                         // Everything is correct. Let's give them what they paid for.
@@ -106,7 +107,7 @@ class transaction_complete extends external_api {
                             // Store LiqPay extra information.
                             $record = new \stdClass();
                             $record->paymentid = $paymentid;
-                            $record->pp_orderid = $orderid;
+                            $record->pp_orderid = $orderdata;
 
                             $DB->insert_record('paygw_liqpay', $record);
 

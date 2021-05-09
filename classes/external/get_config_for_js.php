@@ -74,6 +74,12 @@ class get_config_for_js extends external_api {
         $payable = helper::get_payable($component, $paymentarea, $itemid);
         $surcharge = helper::get_gateway_surcharge('liqpay');
 
+        if (in_array(current_language(), ['uk', 'en', 'ru']) ) {
+            $liqpaylang = current_language();
+        } else {
+            $liqpaylang = 'en';
+        }
+
         $lpencdata = base64_encode(json_encode([
                                     'version'        => '3',
                                     'public_key'      => $config['publickey'],
@@ -83,15 +89,11 @@ class get_config_for_js extends external_api {
                                     'currency'       => $payable->get_currency(),
                                     'description'    => $description,
                                     'order_id'       => "{$USER->id}-{$component}-{$itemid}-".time(),
-                                    'language'       => current_language(),        
+                                    'language'       => $liqpaylang,        
         ]));
         $lpsignature = base64_encode( sha1( $config['privatekey'] . $lpencdata . $config['privatekey'], true ));
 
         return [
-            'publickey' => $config['publickey'],
-            'privatekey' => $config['privatekey'],
-            'cost' => helper::get_rounded_cost($payable->get_amount(), $payable->get_currency(), $surcharge),
-            'currency' => $payable->get_currency(),
             'lpencdata' => $lpencdata,
             'lpsignature'=> $lpsignature,
         ];
@@ -104,12 +106,8 @@ class get_config_for_js extends external_api {
      */
     public static function execute_returns(): external_single_structure {
         return new external_single_structure([
-            'publickey' => new external_value(PARAM_TEXT, 'LiqPay PublicKey'),
-            'privatekey' => new external_value(PARAM_TEXT, 'LiqPay PrivateKey'),
-            'cost' => new external_value(PARAM_FLOAT, 'Cost with gateway surcharge'),
-            'currency' => new external_value(PARAM_TEXT, 'Currency'),
-            'lpencdata' => new external_value(PARAM_TEXT, 'Encoded LiqPay data'),
-            'lpsignature' => new external_value(PARAM_TEXT, 'LiqPay signature'),
+            'lpencdata' => new external_value(PARAM_TEXT, 'Encoded data for LiqPay'),
+            'lpsignature' => new external_value(PARAM_TEXT, 'Encoded signature for LiqPay'),
         ]);
     }
 }
